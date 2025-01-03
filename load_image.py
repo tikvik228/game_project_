@@ -1,8 +1,6 @@
 import os
 import pygame
 import sys
-
-
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
