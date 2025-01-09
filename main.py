@@ -2,6 +2,9 @@ import pygame
 from load_image import load_image
 from tiles import *
 from player import *
+from scout import *
+from bullet import *
+from random import randint
 
 
 
@@ -95,12 +98,12 @@ def level1():
     floor_group = pygame.sprite.Group()
     for numr, row in enumerate(level1_map): # вся строка
         for numc, col in enumerate(row): # каждый символ
-            print(numc, numr)
             if col:
                 Wall(numc, numr, walls_group)
             else:
                 Floor(numc, numr, floor_group)
     hero = Player(0, 1, hero_group)
+    Scout(11, 8, level1_entities)
     running = True
     move_left = move_right = move_up = move_down = False
     image_direction = "down"
@@ -137,15 +140,26 @@ def level1():
                 move_left = move_right = False
         walls_group.draw(screen)
         floor_group.draw(screen)
+
         hero_group.draw(screen)
-        hero.update(move_left, move_right, move_up, move_down, image_direction, walls_group, floor_group)
+        hero.update(move_left, move_right, move_up, move_down, image_direction, walls_group, floor_group, bullets_group)
+
+        for sprite in bullets_group:
+            sprite.draw(screen)
+        bullets_group.update(walls_group)
+
         level1_entities.draw(screen)
+        level1_entities.update(*hero.rect.center, hero.current_cell, level1_map, floor_group, walls_group)
 
         end_level1 = pygame.draw.rect(screen, "red", (10, 10, 20, 20))  # заглушка
         font = pygame.font.Font(None, 24)
         text_surface = font.render("<--", True, "white")
         screen.blit(text_surface, (10, 10))
-        #level1_entities.update()
+
+        end_level1 = pygame.draw.rect(screen, "red", (750, 10,30, 20))  # заглушка
+        font = pygame.font.Font(None, 24)
+        text_surface = font.render(str(hero.heath), True, "white")
+        screen.blit(text_surface, (750, 10))
         clock.tick(fps)
         pygame.display.flip()
     return True

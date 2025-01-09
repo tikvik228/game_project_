@@ -12,18 +12,19 @@ class Player(pygame.sprite.Sprite):
         super().__init__(*group)
         self.image = load_image("player_v2.png")
         self.rect = self.image.get_rect()
-        self.rect.x = x_tile * TILE_WIDTH
-        self.rect.y = y_tile * TILE_HEIGHT
+        self.rect.center = x_tile * TILE_WIDTH + 0.5 * TILE_WIDTH, y_tile * TILE_HEIGHT + 0.5 * TILE_HEIGHT
+        #print(self.rect.x, self.rect.y, self.rect.center)
         self.horizontal_speed = 0
         self.vertical_speed = 0
-        self.current_cell = None
+        self.current_cell = x_tile, y_tile
+        self.heath = 100
 
     def define_your_current_tile(self, floor_group):
         for i in floor_group:
             if i.rect.collidepoint(self.rect.centerx, self.rect.centery):
                 self.current_cell = i.x_cell, i.y_cell
 
-    def update(self, left, right, up, down, direction, walls_group, floor_group):
+    def update(self, left, right, up, down, direction, walls_group, floor_group, bullet_group):
         if left:
             self.horizontal_speed = -SPEED
         elif right:
@@ -68,7 +69,7 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.image = load_image("player_left_v2.png")
                 #сделать статичное изображение
-        res = self.collide(walls_group)
+        res = self.collide(walls_group, bullet_group)
         if res == 3:
             self.rect.x += self.horizontal_speed
             self.rect.y += self.vertical_speed
@@ -79,7 +80,11 @@ class Player(pygame.sprite.Sprite):
 
         self.define_your_current_tile(floor_group)
 
-    def collide(self, walls_group):
+    def collide(self, walls_group, bullet_group):
+        for i in bullet_group:
+            if pygame.sprite.collide_rect(self, i):
+                self.heath -= i.damage
+                i.kill()
         can_move = True
         can_move_vertical = True
         can_move_horizontal = True
