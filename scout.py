@@ -13,7 +13,7 @@ RADIOUS = TILE_HEIGHT * 2
 
 class Scout(pygame.sprite.Sprite):
 
-    def __init__(self, x_tile, y_tile, *group):
+    def __init__(self, x_tile, y_tile, x_tile_default, y_tile_default, *group):
         super().__init__(*group)
         self.image = load_image("scout_v1.png")
         self.rect = self.image.get_rect()
@@ -26,15 +26,33 @@ class Scout(pygame.sprite.Sprite):
         self.path = None
         self.next_tile_cords = self.rect.center
         self.next_tile = self.current_cell
+        self.begin_cell = x_tile, y_tile
+        self.default_cell = x_tile_default, y_tile_default
+        self.player_found = False
+        self.what_direction = self.default_cell
+        self.health = 50
 
     def define_your_current_tile(self, floor_group):
         for i in floor_group:
             if i.rect.collidepoint(self.rect.centerx, self.rect.centery):
                 self.current_cell = i.x_cell, i.y_cell
 
-    def update(self, player_x, player_y, player_cell, map, floor_group, walls_group):
+    def update(self, player_x, player_y, player_cell, map, floor_group, walls_group, level1_entities, bullets_group):
         self.define_your_current_tile(floor_group)
-        self.next_tile_in_way(player_cell, map)
+        check = self.next_tile_in_way(player_cell, map)
+        if not check:
+            return
+        if not self.player_found:
+            if len(self.path) > 4:
+                if (((self.what_direction[0]) + 0.5) * TILE_WIDTH, ((self.what_direction[1]) + 0.5) * TILE_HEIGHT) == self.rect.center:
+                    if self.what_direction == self.default_cell:
+                        self.what_direction = self.begin_cell
+                    else:
+                        self.what_direction = self.default_cell
+                self.next_tile_in_way(self.what_direction, map)
+            else:
+                self.player_found = True
+
         ban = (((player_cell[0] - 0.5) * TILE_WIDTH, (player_cell[1] + 0.5) * TILE_HEIGHT), ((player_cell[0] + 1.5) * TILE_WIDTH, (player_cell[1] + 0.5) * TILE_HEIGHT),
                ((player_cell[0] + 0.5) * TILE_WIDTH, (player_cell[1] - 0.5) * TILE_HEIGHT), ((player_cell[0] + 0.5) * TILE_WIDTH, (player_cell[1] + 1.5) * TILE_HEIGHT))
         if self.rect.center not in ban:
@@ -44,8 +62,14 @@ class Scout(pygame.sprite.Sprite):
                 self.horizontal_speed = 0
                 self.vertical_speed = 0
                 #if not self.shoot_check(player_x, player_y):
-                self.next_tile = (self.path[0][1], self.path[0][0])
-                self.next_tile_cords = (((self.path[0][1]) + 0.5) * TILE_WIDTH, ((self.path[0][0]) + 0.5) * TILE_HEIGHT)
+                #print(self.path)
+                yes = True
+                for other in level1_entities:
+                    if other.next_tile == (self.path[0][1], self.path[0][0]) and other != self:
+                        yes = False
+                if yes:
+                    self.next_tile = (self.path[0][1], self.path[0][0])
+                    self.next_tile_cords = (((self.path[0][1]) + 0.5) * TILE_WIDTH, ((self.path[0][0]) + 0.5) * TILE_HEIGHT)
 
             #print(self.next_tile, self.current_cell, self.next_tile_cords, self.rect.center)
             if self.next_tile[0] - self.current_cell[0] == -1:
@@ -65,18 +89,19 @@ class Scout(pygame.sprite.Sprite):
                 self.vertical_speed = SPEED
                 self.horizontal_speed = 0
 
-            res = self.collide(walls_group)
-            if res == 3:
-                self.rect.x += self.horizontal_speed
-                self.rect.y += self.vertical_speed
-            if res == 2:
-                self.rect.x += self.horizontal_speed
-            if res == 1:
-                self.rect.y += self.vertical_speed
+            #res = self.collide(walls_group)
+            #if res == 3:
+            self.rect.x += self.horizontal_speed
+            self.rect.y += self.vertical_speed
+            #if res == 2:
+                #self.rect.x += self.horizontal_speed
+            #if res == 1:
+                #self.rect.y += self.vertical_speed
         else:
             self.vertical_speed = 0
             self.horizontal_speed = 0
         self.shoot_check(player_x, player_y)
+        self.collide(bullets_group)
 
 
     def next_tile_in_way(self, player_cell, map):
@@ -97,7 +122,7 @@ class Scout(pygame.sprite.Sprite):
                         continue
                     if curr_cords[1] + dx < 0 or curr_cords[1] + dx >= len(map[0]) or curr_cords[0] + dy < 0 or curr_cords[0] + dy >= len(map):
                         continue
-                    if (path_board[curr_cords[0] + dy][curr_cords[1] + dx] == 1
+                    if (path_board[curr_cords[0] + dy][curr_cords[1] + dx] != "-"
                             and (curr_cords[0] + dy, curr_cords[1] + dx) != (player_cell[1], player_cell[0])):
                         continue
                     if dx == 0 or dy == 0:
@@ -140,24 +165,13 @@ class Scout(pygame.sprite.Sprite):
         self.path = path_cells[::-1]
         return True
 
-    def collide(self, walls_group):
-        can_move = True
-        can_move_vertical = True
-        can_move_horizontal = True
-        for i in walls_group:
-            if i.rect.colliderect(pygame.Rect(self.rect.left + self.horizontal_speed, self.rect.top + self.vertical_speed, WIDTH, HEIGHT)):
-                can_move = False
-            if i.rect.colliderect(pygame.Rect(self.rect.left, self.rect.top + self.vertical_speed, WIDTH, HEIGHT)):
-                can_move_vertical = False
-            if i.rect.colliderect(pygame.Rect(self.rect.left + self.horizontal_speed, self.rect.top, WIDTH, HEIGHT)):
-                can_move_horizontal = False
-        if can_move:
-            return 3
-        elif can_move_horizontal:
-            return 2
-        elif can_move_vertical:
-            return 1
-        return 0
+    def collide(self, bullets_group):
+        for i in bullets_group:
+            if pygame.sprite.collide_rect(self, i) and i.sender == "player":
+                self.health -= i.damage
+                i.kill()
+                if self.health <= 0:
+                    self.kill()
 
     def shoot_check(self, player_x, player_y):
         curr_time = pygame.time.get_ticks()
@@ -165,9 +179,9 @@ class Scout(pygame.sprite.Sprite):
             return False
         if (abs(player_x - self.rect.centerx) ** 2 + abs(player_y - self.rect.centery) ** 2) ** 0.5 <= RADIOUS:
             angle = math.degrees(math.atan2(player_y - self.rect.centery, player_x - self.rect.centerx))
-            Bullet("bullet_temp.png", angle, self.rect.center, 5, DAMAGE)
-            Bullet("bullet_temp.png", angle + 10, self.rect.center, 5, DAMAGE)
-            Bullet("bullet_temp.png", angle - 10, self.rect.center, 5, DAMAGE)
+            Bullet("bullet_temp.png", angle, self.rect.center, 5, DAMAGE, "enemy")
+            Bullet("bullet_temp.png", angle + 10, self.rect.center, 5, DAMAGE, "enemy")
+            Bullet("bullet_temp.png", angle - 10, self.rect.center, 5, DAMAGE, "enemy")
             self.last_shoot_time = curr_time
             #self.period = randint(700, 1000)
             return True

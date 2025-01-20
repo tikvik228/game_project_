@@ -1,6 +1,8 @@
 import pygame
 from load_image import load_image
 from tiles import TILE_WIDTH, TILE_HEIGHT
+from inventory import all_equipment
+from bullet import Bullet
 WIDTH = 24
 HEIGHT = 48
 SPEED = 3
@@ -8,7 +10,7 @@ SPEED = 3
 
 class Player(pygame.sprite.Sprite):
 
-    def __init__(self, x_tile, y_tile, *group):
+    def __init__(self, x_tile, y_tile,  *group):
         super().__init__(*group)
         self.image = load_image("player_v2.png")
         self.rect = self.image.get_rect()
@@ -17,7 +19,10 @@ class Player(pygame.sprite.Sprite):
         self.horizontal_speed = 0
         self.vertical_speed = 0
         self.current_cell = x_tile, y_tile
-        self.heath = 100
+        self.health = 100
+        self.curr_inv_pos = None
+        self.bullet_angle = 90
+
 
     def define_your_current_tile(self, floor_group):
         for i in floor_group:
@@ -39,6 +44,7 @@ class Player(pygame.sprite.Sprite):
             self.vertical_speed = 0
 
         if direction == "down":
+            self.bullet_angle = 90
             if self.vertical_speed:
                 self.image = load_image("player_v2.png")
                 # анимация
@@ -47,6 +53,7 @@ class Player(pygame.sprite.Sprite):
                 #сделать статичное изображение
 
         if direction == "up":
+            self.bullet_angle = -90
             if self.vertical_speed:
                 self.image = load_image("player_up_v2.png")
                 # анимация
@@ -55,6 +62,7 @@ class Player(pygame.sprite.Sprite):
                 #сделать статичное изображение
 
         if direction == "right":
+            self.bullet_angle = 0
             if self.horizontal_speed:
                 self.image = load_image("player_right_v2.png")
                 # анимация
@@ -63,6 +71,7 @@ class Player(pygame.sprite.Sprite):
                 # сделать статичное изображение
 
         if direction == "left":
+            self.bullet_angle = 180
             if self.horizontal_speed:
                 self.image = load_image("player_left_v2.png")
                 # анимация
@@ -82,8 +91,8 @@ class Player(pygame.sprite.Sprite):
 
     def collide(self, walls_group, bullet_group):
         for i in bullet_group:
-            if pygame.sprite.collide_rect(self, i):
-                self.heath -= i.damage
+            if pygame.sprite.collide_rect(self, i) and i.sender == "enemy":
+                self.health -= i.damage
                 i.kill()
         can_move = True
         can_move_vertical = True
@@ -102,3 +111,17 @@ class Player(pygame.sprite.Sprite):
         elif can_move_vertical:
             return 1
         return 0
+
+    def change_inv_cell(self, inventory, num):
+        self.curr_inv_pos = num
+        print("CHANGE MY SKIN")
+        '''установить спрайты по инвентарю: смотрим на нам, понимаем какая кнопка была зажата, понимаем какой индекс брать
+        у инвентаря, и из экьюпмента забираем по названию директорию'''
+
+
+    def try_to_shoot(self, inventory):
+        if self.curr_inv_pos is not None and inventory.inv[self.curr_inv_pos] is not None and inventory.inv[self.curr_inv_pos][1] != 0:
+            bul_img = all_equipment[inventory.inv[self.curr_inv_pos][0]]["bullet_image"]
+            bul_dmg = all_equipment[inventory.inv[self.curr_inv_pos][0]]["bullet_damage"]
+            Bullet(bul_img, self.bullet_angle, self.rect.center, 5, bul_dmg, "player")
+            inventory.inv[self.curr_inv_pos][1] -= 1

@@ -6,7 +6,7 @@ bullets_group = pygame.sprite.Group()
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, img, angle, pos, speed, damage):
+    def __init__(self, img, angle, pos, speed, damage, sender):
         super().__init__(bullets_group)
         self.image = load_image(img)
         self.rect = self.image.get_rect()
@@ -14,11 +14,12 @@ class Bullet(pygame.sprite.Sprite):
         self.speed = speed
         self.damage = damage
         self.angle = angle
+        self.sender = sender
 
-    def draw(self, screen):
+    def draw(self, screen, moving):
         rotated_image = pygame.transform.rotate(self.image, 180 - self.angle)
         rotated_rect = rotated_image.get_rect(center=self.rect.center)
-        screen.blit(rotated_image, rotated_rect)
+        screen.blit(rotated_image, rotated_rect.move(moving))
 
     def update(self, walls_group):
         # перемещаем пулю по траектории
