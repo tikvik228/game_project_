@@ -224,7 +224,7 @@ def level1():
         text_surface = font.render("<--", True, "white")
         screen.blit(text_surface, (10, 10))
 
-        end_level1 = pygame.draw.rect(screen, "red", (750, 10,30, 20))  # заглушка
+        health = pygame.draw.rect(screen, "red", (750, 10,30, 20))  # заглушка
         font = pygame.font.Font(None, 24)
         text_surface = font.render(str(hero.health), True, "white")
         screen.blit(text_surface, (750, 10))
