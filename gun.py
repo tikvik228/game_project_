@@ -1,8 +1,9 @@
 import pygame
 from load_image import load_image
-from tiles import TILE_WIDTH, TILE_HEIGHT
+from constants import TILE_WIDTH, TILE_HEIGHT
 
 class Gun(pygame.sprite.Sprite):
+    """класс оружия, лежащего на уровне"""
     def __init__(self, name, img, x_tile, y_tile, *group):
         super().__init__(*group)
         self.name = name

@@ -2,29 +2,19 @@ import math
 import pygame
 from load_image import load_image
 
-bullets_group = pygame.sprite.Group()
-
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, img, angle, pos, speed, damage, sender):
-        super().__init__(bullets_group)
-        self.image = load_image(img)
-        self.rect = self.image.get_rect()
-        self.rect.center = pos
+    def __init__(self, img, angle, pos, speed, damage, sender, group):
+        super().__init__(group)
+        self.angle = angle
+        self.image = pygame.transform.rotate(load_image(img), 180 - self.angle)
+        self.rect = self.image.get_rect(center=pos)
         self.speed = speed
         self.damage = damage
-        self.angle = angle
-        self.sender = sender
+        self.sender = sender  # отправитель пули -  player/enemy
 
-    def draw(self, screen, moving):
-        rotated_image = pygame.transform.rotate(self.image, 180 - self.angle)
-        rotated_rect = rotated_image.get_rect(center=self.rect.center)
-        screen.blit(rotated_image, rotated_rect.move(moving))
-
-    def update(self, walls_group):
-        # перемещаем пулю по траектории
+    def update(self, walls_group):  # перемещение пули по траектории
         self.rect.x += round(self.speed * math.cos(math.radians(self.angle)))
         self.rect.y += round(self.speed * math.sin(math.radians(self.angle)))
-
         if pygame.sprite.spritecollideany(self, walls_group):
             self.kill()

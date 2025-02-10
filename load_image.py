@@ -1,7 +1,10 @@
 import os
 import pygame
 import sys
+
+
 def load_image(name, colorkey=None):
+    """вспомогательная функция для загрузки изображения"""
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
